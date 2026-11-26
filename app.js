@@ -246,3 +246,285 @@ searchInput.addEventListener('keydown', (e) => {
     searchPlace();
   }
 });
+
+// 9. Bilingual Support (English <-> Hindi)
+const TRANSLATIONS = {
+  en: {
+    appTitle: 'KhetNaap',
+    subtitle: 'Tap field corners on satellite map',
+    myLocation: '📍 My Location',
+    searchPlaceholder: 'Search village, town, or area (e.g., Mhow, Dhar, Indore)...',
+    searchBtn: 'Search',
+    startWalk: '🚶 Start GPS Walk',
+    stopWalk: '⏹ Stop Walk',
+    finishWalk: '✓ Finish Plot',
+    acres: 'Acres',
+    hectares: 'Hectares',
+    bigha: 'Bigha (MP/Std)',
+    sqm: 'Sq. Meters',
+    perimeterLabel: 'Boundary Perimeter:',
+    plotPlaceholder: 'Plot name (e.g., North Wheat Khet)',
+    savePlot: 'Save Plot',
+    sharePlot: 'Share Link',
+    clearPlot: 'Clear',
+    disclaimer: '*Approximate satellite measurement for farming & planning—not a legal revenue survey.',
+    langToggleLabel: 'हिंदी'
+  },
+  hi: {
+    appTitle: 'खेतनाप (KhetNaap)',
+    subtitle: 'सैटेलाइट मैप पर खेत के कोने चुनें',
+    myLocation: '📍 मेरी लोकेशन',
+    searchPlaceholder: 'गाँव, कस्बा या क्षेत्र खोजें (जैसे महू, धार, इंदौर)...',
+    searchBtn: 'खोजें',
+    startWalk: '🚶 जीपीएस वॉक शुरू करें',
+    stopWalk: '⏹ वॉक रोकें',
+    finishWalk: '✓ खेत पूरा करें',
+    acres: 'एकड़ (Acres)',
+    hectares: 'हेक्टेयर (Hectares)',
+    bigha: 'बीघा (Bigha)',
+    sqm: 'वर्ग मीटर (Sq. m)',
+    perimeterLabel: 'मेढ़ की लंबाई:',
+    plotPlaceholder: 'खेत का नाम (जैसे उत्तरी गेहूँ खेत)',
+    savePlot: 'सेव करें',
+    sharePlot: 'लिंक शेयर करें',
+    clearPlot: 'साफ़ करें',
+    disclaimer: '*यह खेती और योजना के लिए अनुमानित माप है—कानूनी या खसरा सर्वे नहीं।',
+    langToggleLabel: 'English'
+  }
+};
+
+let currentLang = localStorage.getItem('khetnaap_lang') || 'en';
+
+function applyLanguage(lang) {
+  currentLang = lang;
+  localStorage.setItem('khetnaap_lang', lang);
+  const dict = TRANSLATIONS[lang] || TRANSLATIONS.en;
+
+  document.querySelectorAll('[data-i18n]').forEach((el) => {
+    const key = el.getAttribute('data-i18n');
+    if (dict[key]) el.textContent = dict[key];
+  });
+
+  document.querySelectorAll('[data-i18n-placeholder]').forEach((el) => {
+    const key = el.getAttribute('data-i18n-placeholder');
+    if (dict[key]) el.placeholder = dict[key];
+  });
+
+  const langBtn = document.getElementById('lang-btn');
+  if (langBtn) langBtn.textContent = dict.langToggleLabel;
+
+  const walkBtn = document.getElementById('walk-toggle-btn');
+  if (walkBtn) {
+    walkBtn.textContent = watchId !== null ? dict.stopWalk : dict.startWalk;
+  }
+
+  updateWalkStatusText();
+}
+
+document.getElementById('lang-btn').addEventListener('click', () => {
+  applyLanguage(currentLang === 'en' ? 'hi' : 'en');
+});
+
+// 10. Walk-the-Boundary Live GPS Tracking
+let watchId = null;
+let walkedCoords = []; // Array of [lat, lng]
+let walkPolyline = null;
+let lastAccuracy = null;
+
+const walkToggleBtn = document.getElementById('walk-toggle-btn');
+const walkFinishBtn = document.getElementById('walk-finish-btn');
+const walkStatusEl = document.getElementById('walk-status');
+
+function updateWalkStatusText() {
+  if (!walkStatusEl) return;
+  const accText = lastAccuracy ? ` (±${Math.round(lastAccuracy)}m)` : '';
+  if (watchId !== null) {
+    walkStatusEl.textContent =
+      currentLang === 'hi'
+        ? `रिकॉर्डिंग जारी: ${walkedCoords.length} बिंदु${accText}`
+        : `Recording: ${walkedCoords.length} pts${accText}`;
+  } else {
+    walkStatusEl.textContent =
+      currentLang === 'hi'
+        ? `जीपीएस वॉक बंद (${walkedCoords.length} बिंदु)`
+        : `GPS Walk: Idle (${walkedCoords.length} pts)`;
+  }
+}
+
+function haversineMeters(a, b) {
+  const from = turf.point([a[1], a[0]]);
+  const to = turf.point([b[1], b[0]]);
+  return turf.distance(from, to, { units: 'meters' });
+}
+
+function startWalkTracking() {
+  if (!navigator.geolocation) {
+    alert(currentLang === 'hi' ? 'इस ब्राउज़र में GPS उपलब्ध नहीं है।' : 'Geolocation is not supported in this browser.');
+    return;
+  }
+
+  drawnItems.clearLayers();
+  resetMeasurements();
+  walkedCoords = [];
+  lastAccuracy = null;
+
+  if (walkPolyline) {
+    map.removeLayer(walkPolyline);
+  }
+  walkPolyline = L.polyline([], { color: '#38bdf8', weight: 4, dashArray: '6, 6' }).addTo(map);
+
+  watchId = navigator.geolocation.watchPosition(
+    (pos) => {
+      const { latitude, longitude, accuracy } = pos.coords;
+      lastAccuracy = accuracy;
+      const pt = [latitude, longitude];
+
+      // Ignore wildly inaccurate fixes (> 35m) or duplicate jitter (< 2.5m)
+      if (accuracy > 35) {
+        updateWalkStatusText();
+        return;
+      }
+
+      const prev = walkedCoords[walkedCoords.length - 1];
+      if (!prev || haversineMeters(prev, pt) >= 2.5) {
+        walkedCoords.push(pt);
+        walkPolyline.addLatLng(pt);
+        map.panTo(pt, { animate: true });
+      }
+
+      walkFinishBtn.disabled = walkedCoords.length < 3;
+      updateWalkStatusText();
+    },
+    (err) => {
+      alert(
+        currentLang === 'hi'
+          ? `GPS त्रुटि: ${err.message} (HTTPS और लोकेशन अनुमति जाँचें)`
+          : `GPS error: ${err.message} (Ensure HTTPS and location permission are enabled)`
+      );
+      stopWalkTracking();
+    },
+    { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 }
+  );
+
+  walkToggleBtn.classList.add('recording');
+  walkFinishBtn.disabled = true;
+  applyLanguage(currentLang);
+}
+
+function stopWalkTracking() {
+  if (watchId !== null) {
+    navigator.geolocation.clearWatch(watchId);
+    watchId = null;
+  }
+  walkToggleBtn.classList.remove('recording');
+  walkFinishBtn.disabled = walkedCoords.length < 3;
+  applyLanguage(currentLang);
+}
+
+function finishWalkPlot() {
+  stopWalkTracking();
+  if (walkedCoords.length < 3) {
+    alert(currentLang === 'hi' ? 'खेत का क्षेत्रफल निकालने के लिए कम से कम 3 बिंदु चाहिए।' : 'Walk at least 3 distinct points around the field first.');
+    return;
+  }
+
+  if (walkPolyline) {
+    map.removeLayer(walkPolyline);
+    walkPolyline = null;
+  }
+
+  const polygonLayer = L.polygon(walkedCoords, {
+    color: '#facc15',
+    weight: 3,
+    fillOpacity: 0.25
+  });
+
+  drawnItems.clearLayers();
+  drawnItems.addLayer(polygonLayer);
+  map.fitBounds(polygonLayer.getBounds(), { padding: [20, 20] });
+  updateMeasurements(polygonLayer);
+}
+
+walkToggleBtn.addEventListener('click', () => {
+  if (watchId !== null) {
+    stopWalkTracking();
+  } else {
+    startWalkTracking();
+  }
+});
+
+walkFinishBtn.addEventListener('click', finishWalkPlot);
+
+// 11. Shareable Plot Link & Summary
+function buildShareUrl() {
+  const payload = {
+    n: document.getElementById('plot-name').value.trim() || 'Shared Khet',
+    a: document.getElementById('area-acres').textContent,
+    b: document.getElementById('area-bigha').textContent,
+    g: currentGeoJSON
+  };
+  const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+  const url = new URL(window.location.href);
+  url.searchParams.set('plot', encoded);
+  return { url: url.toString(), payload };
+}
+
+document.getElementById('share-btn').addEventListener('click', async () => {
+  if (!currentGeoJSON || currentSqMeters === 0) {
+    alert(currentLang === 'hi' ? 'पहले मैप पर खेत बनाएं या GPS वॉक पूरा करें।' : 'Draw a field or finish a GPS walk first before sharing.');
+    return;
+  }
+
+  const { url, payload } = buildShareUrl();
+  const summaryText =
+    currentLang === 'hi'
+      ? `${payload.n}: ${payload.a} एकड़ (${payload.b} बीघा)\nलिंक: ${url}`
+      : `${payload.n}: ${payload.a} Acres (${payload.b} Bigha)\nLink: ${url}`;
+
+  try {
+    if (navigator.share) {
+      await navigator.share({ title: 'KhetNaap Plot', text: summaryText, url });
+    } else if (navigator.clipboard) {
+      await navigator.clipboard.writeText(summaryText);
+      alert(currentLang === 'hi' ? 'शेयर लिंक कॉपी हो गया है!' : 'Share link copied to clipboard!');
+    } else {
+      prompt('Copy this share link:', url);
+    }
+  } catch (err) {
+    // User cancelled share sheet or clipboard blocked
+    if (err && err.name !== 'AbortError') {
+      prompt('Copy this share link:', url);
+    }
+  }
+});
+
+// Load plot automatically if opened via ?plot=... link
+(function loadPlotFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const encoded = params.get('plot');
+  if (!encoded) return;
+
+  try {
+    const decoded = JSON.parse(decodeURIComponent(escape(atob(encoded))));
+    if (!decoded || !decoded.g) return;
+
+    if (decoded.n) {
+      document.getElementById('plot-name').value = decoded.n;
+    }
+
+    const layer = L.geoJSON(decoded.g, {
+      style: { color: '#facc15', weight: 3, fillOpacity: 0.25 }
+    }).getLayers()[0];
+
+    if (layer) {
+      drawnItems.clearLayers();
+      drawnItems.addLayer(layer);
+      map.fitBounds(layer.getBounds(), { padding: [20, 20] });
+      updateMeasurements(layer);
+    }
+  } catch (err) {
+    console.warn('Invalid shared plot URL parameter:', err);
+  }
+})();
+
+applyLanguage(currentLang);

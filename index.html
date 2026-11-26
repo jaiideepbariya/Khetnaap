@@ -13,10 +13,13 @@
 <body>
   <header class="top-bar">
     <div>
-      <h1>KhetNaap</h1>
-      <span class="subtitle">Tap field corners on satellite map</span>
+      <h1 data-i18n="appTitle">KhetNaap</h1>
+      <span class="subtitle" data-i18n="subtitle">Tap field corners on satellite map</span>
     </div>
-    <button id="locate-btn" class="btn-locate" title="Find My Location">📍 My Location</button>
+    <div class="header-controls">
+      <button id="lang-btn" type="button" class="btn-lang">हिंदी</button>
+      <button id="locate-btn" type="button" class="btn-locate" title="Find My Location" data-i18n="myLocation">📍 My Location</button>
+    </div>
   </header>
 
   <div class="search-bar">
@@ -24,35 +27,43 @@
       type="text"
       id="place-search-input"
       placeholder="Search village, town, or area (e.g., Mhow, Dhar, Indore)..."
+      data-i18n-placeholder="searchPlaceholder"
       autocomplete="off"
     />
-    <button id="place-search-btn" type="button" class="btn-search">Search</button>
+    <button id="place-search-btn" type="button" class="btn-search" data-i18n="searchBtn">Search</button>
   </div>
-  
+
   <main id="map"></main>
 
   <section class="dashboard">
+    <!-- Walk-the-Boundary Live GPS Controls -->
+    <div class="gps-walk-bar">
+      <button id="walk-toggle-btn" type="button" class="btn-walk" data-i18n="startWalk">🚶 Start GPS Walk</button>
+      <button id="walk-finish-btn" type="button" class="btn-walk-finish" disabled data-i18n="finishWalk">✓ Finish Plot</button>
+      <span id="walk-status" class="walk-status">GPS Walk: Idle (0 pts)</span>
+    </div>
+
     <div class="metrics-grid">
       <div class="metric-card primary">
-        <span class="label">Acres</span>
+        <span class="label" data-i18n="acres">Acres</span>
         <strong id="area-acres">0.00</strong>
       </div>
       <div class="metric-card">
-        <span class="label">Hectares</span>
+        <span class="label" data-i18n="hectares">Hectares</span>
         <strong id="area-hectares">0.00</strong>
       </div>
       <div class="metric-card">
-        <span class="label">Bigha (MP/Std)</span>
+        <span class="label" data-i18n="bigha">Bigha (MP/Std)</span>
         <strong id="area-bigha">0.00</strong>
       </div>
       <div class="metric-card">
-        <span class="label">Sq. Meters</span>
+        <span class="label" data-i18n="sqm">Sq. Meters</span>
         <strong id="area-sqm">0</strong>
       </div>
     </div>
 
     <div class="perimeter-row">
-      <span>Boundary Perimeter: <strong id="perimeter-m">0 m</strong></span>
+      <span><span data-i18n="perimeterLabel">Boundary Perimeter:</span> <strong id="perimeter-m">0 m</strong></span>
       <select id="bigha-preset" title="Select Bigha Standard">
         <option value="2529.29">1 Bigha = 27,225 sq ft (MP/UP/Raj)</option>
         <option value="1618.74">1 Bigha = 17,424 sq ft (Gujarat)</option>
@@ -61,13 +72,19 @@
     </div>
 
     <div class="actions">
-      <input type="text" id="plot-name" placeholder="Plot name (e.g., North Wheat Khet)" />
-      <button id="save-btn" class="btn-save">Save Plot</button>
-      <button id="clear-btn" class="btn-clear">Clear</button>
+      <input
+        type="text"
+        id="plot-name"
+        placeholder="Plot name (e.g., North Wheat Khet)"
+        data-i18n-placeholder="plotPlaceholder"
+      />
+      <button id="save-btn" type="button" class="btn-save" data-i18n="savePlot">Save Plot</button>
+      <button id="share-btn" type="button" class="btn-share" data-i18n="sharePlot">Share Link</button>
+      <button id="clear-btn" type="button" class="btn-clear" data-i18n="clearPlot">Clear</button>
     </div>
 
     <div id="saved-list" class="saved-list"></div>
-    <p class="disclaimer">*Approximate satellite measurement for farming & planning—not a legal revenue survey.</p>
+    <p class="disclaimer" data-i18n="disclaimer">*Approximate satellite measurement for farming & planning—not a legal revenue survey.</p>
   </section>
 
   <!-- Leaflet, Leaflet.draw & Turf.js (Free CDN) -->

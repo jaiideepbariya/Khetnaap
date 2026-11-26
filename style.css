@@ -73,6 +73,83 @@ body {
   cursor: not-allowed;
 }
 
+.header-controls {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.btn-lang {
+  background: #ecfdf5;
+  color: #14532d;
+  border: none;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.gps-walk-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding: 8px;
+  background: #111827;
+  border-radius: 8px;
+  border: 1px solid #374151;
+}
+
+.btn-walk {
+  background: #22c55e;
+  color: #052e16;
+  border: none;
+  padding: 7px 12px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.btn-walk.recording {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.btn-walk-finish {
+  background: #38bdf8;
+  color: #082f49;
+  border: none;
+  padding: 7px 12px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.btn-walk-finish:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.walk-status {
+  font-size: 0.78rem;
+  color: #d1d5db;
+}
+
+.btn-share {
+  background: #a855f7;
+  color: #ffffff;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
 #map {
   flex: 1;
   width: 100%;
