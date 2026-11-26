@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>KhetNaap — Field Measurement Tool</title>
+
+  <!-- Leaflet & Leaflet.draw CSS (Free CDN) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="top-bar">
+    <div>
+      <h1>KhetNaap</h1>
+      <span class="subtitle">Tap field corners on satellite map</span>
+    </div>
+    <button id="locate-btn" class="btn-locate" title="Find My Location">📍 My Location</button>
+  </header>
+
+  <div class="search-bar">
+    <input
+      type="text"
+      id="place-search-input"
+      placeholder="Search village, town, or area (e.g., Mhow, Dhar, Indore)..."
+      autocomplete="off"
+    />
+    <button id="place-search-btn" type="button" class="btn-search">Search</button>
+  </div>
+  
+  <main id="map"></main>
+
+  <section class="dashboard">
+    <div class="metrics-grid">
+      <div class="metric-card primary">
+        <span class="label">Acres</span>
+        <strong id="area-acres">0.00</strong>
+      </div>
+      <div class="metric-card">
+        <span class="label">Hectares</span>
+        <strong id="area-hectares">0.00</strong>
+      </div>
+      <div class="metric-card">
+        <span class="label">Bigha (MP/Std)</span>
+        <strong id="area-bigha">0.00</strong>
+      </div>
+      <div class="metric-card">
+        <span class="label">Sq. Meters</span>
+        <strong id="area-sqm">0</strong>
+      </div>
+    </div>
+
+    <div class="perimeter-row">
+      <span>Boundary Perimeter: <strong id="perimeter-m">0 m</strong></span>
+      <select id="bigha-preset" title="Select Bigha Standard">
+        <option value="2529.29">1 Bigha = 27,225 sq ft (MP/UP/Raj)</option>
+        <option value="1618.74">1 Bigha = 17,424 sq ft (Gujarat)</option>
+        <option value="1337.80">1 Bigha = 14,400 sq ft (Bengal/Assam)</option>
+      </select>
+    </div>
+
+    <div class="actions">
+      <input type="text" id="plot-name" placeholder="Plot name (e.g., North Wheat Khet)" />
+      <button id="save-btn" class="btn-save">Save Plot</button>
+      <button id="clear-btn" class="btn-clear">Clear</button>
+    </div>
+
+    <div id="saved-list" class="saved-list"></div>
+    <p class="disclaimer">*Approximate satellite measurement for farming & planning—not a legal revenue survey.</p>
+  </section>
+
+  <!-- Leaflet, Leaflet.draw & Turf.js (Free CDN) -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+  <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
